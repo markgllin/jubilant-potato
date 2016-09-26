@@ -38,6 +38,13 @@ public class secureFile{
         byte[] rawKey = createKey(seed.getBytes());
         SecretKeySpec key = new SecretKeySpec(rawKey, ENCRYPTION_METHOD);
 
+/*
+        byte[] raw = key.getEncoded();
+
+            for (byte theByte : raw)
+                System.out.println(Integer.toHexString(theByte));
+*/
+
         //encrypt data and write te file
         byte[] ciphertext = encrypt(data, digest, key);
 
@@ -86,7 +93,7 @@ public class secureFile{
         byte[] raw = {};
 
         try{
-            //use use input as seed for generating random key
+            //use user input as seed for generating random key
             SecureRandom random = new SecureRandom(seed);
             KeyGenerator keyGen = KeyGenerator.getInstance(ENCRYPTION_METHOD);
             keyGen.init(random);
@@ -100,7 +107,9 @@ public class secureFile{
     }
 
     public static byte[] encrypt(byte[] data, byte[] md, SecretKey key){
-        byte[] cipherText = {};
+        byte[] ciphertext = {};
+
+        IvParameterSpec iv = new IvParameterSpec("test".getBytes());
 
         //convert MAP identifier from string to byte[]
         byte[] byteMAPIdentifier = MAP_IDENTIFIER.getBytes();
@@ -114,13 +123,13 @@ public class secureFile{
         //encrypt data
         try{
             Cipher genCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            genCipher.init(Cipher.ENCRYPT_MODE, key);
-            cipherText = genCipher.doFinal(data_md);
+            //genCipher.init(Cipher.ENCRYPT_MODE, key, iv);
+            //ciphertext = genCipher.doFinal(data_md);
         }catch(GeneralSecurityException e){
             System.out.println("Error encountered during encryption.");
         }
 
-        return cipherText;
+        return ciphertext;
     }
 
 }

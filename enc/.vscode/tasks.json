@@ -16,7 +16,7 @@
         {
             "taskName": "run",
             "isTestCommand": true,
-            "args":["java secureFile"]
+            "args":["java secureFile potato.png 3"]
         }
     ]
 }

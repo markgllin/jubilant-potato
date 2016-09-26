@@ -1,3 +1,16 @@
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.Path;
+import java.io.*;
+import java.util.Arrays;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.*;
+
+import java.security.*;
+
 public class decryptFile{
 
     private static final String MAP = "SHA1";
@@ -23,7 +36,17 @@ public class decryptFile{
         byte[] rawKey = createKey(seed.getBytes());
         SecretKeySpec key = new SecretKeySpec(rawKey, ENCRYPTION_METHOD);
 
-        byte[] plaintext = decyrpt(key);
+        byte[] plaintext = decrypt(data, key, "test");
+
+        byte[] plaintextInfo = checkIntegrity(plaintext);
+
+        try{
+            FileOutputStream decryptedFile = new FileOutputStream("decrypted-" + file);
+            decryptedFile.write(plaintextInfo);
+            decryptedFile.close();
+        }catch(IOException e){
+            System.out.println("Invalid filepath or name entered.");
+        }
 
     }
 
@@ -59,16 +82,27 @@ public class decryptFile{
         return raw;
     }
 
-    public static byte[] decrypt(SecretKey key){
+    public static byte[] decrypt(byte[] data, SecretKey key, String iv){
         byte[] plaintext = {};
 
-        //encrypt data
+        //decrypt data
         try{
             Cipher genCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            genCipher.init(Cipher.DECRYPT_MODE, key);
-            cipherText = genCipher.doFinal(data_md);
+
+            byte[] raw = key.getEncoded();
+
+            for (byte theByte : raw)
+                System.out.println(Integer.toHexString(theByte));
+    
+            genCipher.init(Cipher.DECRYPT_MODE, key, iv);
+
+            plaintext = genCipher.doFinal(data);
         }catch(GeneralSecurityException e){
-            System.out.println("Error encountered during encryption.");
+            System.out.println("Error encountered during decryption.");
+
+            for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
+                System.out.println(ste);
+            }
         }
 
         return plaintext;
@@ -113,11 +147,11 @@ public class decryptFile{
         if (!identFound) return new byte[0];
 
         //split file into data and md
-        byte[] data = new data[index+1];
+        byte[] data = new byte[index+1];
         System.arraycopy(file, 0, data, 0, data.length);
 
-        byte[] fileDigest = new byte[file.length-index-byteMAPIdentifier.length];
-        System.arraycopy(fileDigest,index + byteMAPIdentifier.length, fileDigest, fileDigest.length);
+        byte[] fileDigest = new byte[file.length-data.length-byteMAPIdentifier.length];
+        System.arraycopy(file,(index + byteMAPIdentifier.length), fileDigest, 0, fileDigest.length);
 
         //create md from data and compare with md appended to file
         byte[] genDigest = createDigest(data);
