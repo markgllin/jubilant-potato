@@ -36,13 +36,11 @@ public class decryptFile{
         byte[] rawKey = createKey(seed.getBytes());
         SecretKeySpec key = new SecretKeySpec(rawKey, ENCRYPTION_METHOD);
 
-        byte[] plaintext = decrypt(data, key, "test");
-
-        byte[] plaintextInfo = checkIntegrity(plaintext);
+        byte[] plaintext = checkIntegrity(decrypt(data, key););
 
         try{
             FileOutputStream decryptedFile = new FileOutputStream("decrypted-" + file);
-            decryptedFile.write(plaintextInfo);
+            decryptedFile.write(plaintext);
             decryptedFile.close();
         }catch(IOException e){
             System.out.println("Invalid filepath or name entered.");
@@ -82,7 +80,7 @@ public class decryptFile{
         return raw;
     }
 
-    public static byte[] decrypt(byte[] data, SecretKey key, String iv){
+    public static byte[] decrypt(byte[] data, SecretKey key){
         byte[] plaintext = {};
 
         //decrypt data
@@ -94,7 +92,7 @@ public class decryptFile{
             for (byte theByte : raw)
                 System.out.println(Integer.toHexString(theByte));
     
-            genCipher.init(Cipher.DECRYPT_MODE, key, iv);
+            genCipher.init(Cipher.DECRYPT_MODE, key);
 
             plaintext = genCipher.doFinal(data);
         }catch(GeneralSecurityException e){

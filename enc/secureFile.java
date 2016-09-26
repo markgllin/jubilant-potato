@@ -35,7 +35,13 @@ public class secureFile{
         byte[] digest = createDigest(data);
 
         //create key using user input as seed
-        byte[] rawKey = createKey(seed.getBytes());
+        byte[] rawKey = {};
+        try{
+            rawKey = createKey(seed.getBytes("UTF-8"));
+        }catch(UnsupportedEncodingException e){
+            System.out.println("Unsupported encoding");
+        }
+        
         SecretKeySpec key = new SecretKeySpec(rawKey, ENCRYPTION_METHOD);
 
 /*
@@ -108,11 +114,15 @@ public class secureFile{
 
     public static byte[] encrypt(byte[] data, byte[] md, SecretKey key){
         byte[] ciphertext = {};
-
-        IvParameterSpec iv = new IvParameterSpec("test".getBytes());
-
+        byte[] byteMAPIdentifier = {};
+        
         //convert MAP identifier from string to byte[]
-        byte[] byteMAPIdentifier = MAP_IDENTIFIER.getBytes();
+        try{
+            byteMAPIdentifier = MAP_IDENTIFIER.getBytes("UTF-8");
+        }catch(UnsupportedEncodingException e){
+            System.out.println("Error in encoding in encrypt function.");
+        }
+        
 
         //combine data with identifier and MAP
         byte[] data_md = new byte[data.length + md.length + byteMAPIdentifier.length];
@@ -123,8 +133,8 @@ public class secureFile{
         //encrypt data
         try{
             Cipher genCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            //genCipher.init(Cipher.ENCRYPT_MODE, key, iv);
-            //ciphertext = genCipher.doFinal(data_md);
+            genCipher.init(Cipher.ENCRYPT_MODE, key);
+            ciphertext = genCipher.doFinal(data_md);
         }catch(GeneralSecurityException e){
             System.out.println("Error encountered during encryption.");
         }
