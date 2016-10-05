@@ -14,11 +14,10 @@ public class secureFile{
 
     private static final String MAP = "SHA1";
     private static final String ENCRYPTION_METHOD = "AES";
-    private static final String MAP_IDENTIFIER = "SSSHHHAAA111";
 
     public static void main(String args[]){
-        String file = "";
-        String seed = "";
+        String file = "", seed = "";
+        byte[] data = {}, digest = {}, rawKey = {}, cText = {};
 
         if (args.length != 2){
             System.out.println("Run program by invoking the command \'java secureFile [plaintext-filename] [seed]\' ");
@@ -29,42 +28,31 @@ public class secureFile{
         }
 
         //read file into byte array
-        byte[] data = fileToBytes(file);
+        data = readFile(file);
 
         //create message digest
-        byte[] digest = createDigest(data);
-
-        //create key using user input as seed
-        byte[] rawKey = {};
-        try{
-            rawKey = createKey(seed.getBytes("UTF-8"));
-        }catch(UnsupportedEncodingException e){
-            System.out.println("Unsupported encoding");
-        }
-        
-        SecretKeySpec key = new SecretKeySpec(rawKey, ENCRYPTION_METHOD);
-
-/*
-        byte[] raw = key.getEncoded();
-
-            for (byte theByte : raw)
-                System.out.println(Integer.toHexString(theByte));
-*/
-
-        //encrypt data and write te file
-        byte[] ciphertext = encrypt(data, digest, key);
+        digest = makeDigest(data);
 
         try{
-            FileOutputStream cipherTextFile = new FileOutputStream("encrypted-" + file);
-            cipherTextFile.write(ciphertext);
-            cipherTextFile.close();
+            //create key using user input as seed
+            rawKey = makeKey(seed.getBytes("UTF-8"));
+            SecretKeySpec key = new SecretKeySpec(rawKey, ENCRYPTION_METHOD);
+
+            //encrypt data and write te file
+            cText = encrypt(data, digest, key);
+
+            //write encrypted data to file
+            FileOutputStream cFile = new FileOutputStream("/home/mark/Documents/CPSC418-JCA/dec/encrypted");
+            cFile.write(cText);
+            cFile.close();
+
         }catch(IOException e){
-            System.out.println("Invalid filepath or name entered.");
+            System.out.println("An error was encountered during encryption.");
         }
 
     }
 
-    public static byte[] fileToBytes(String file){
+    public static byte[] readFile(String file){
         byte[] data = {};
 
         try{
@@ -79,7 +67,7 @@ public class secureFile{
         return data;
     }
 
-    public static byte[] createDigest(byte[] data){
+    public static byte[] makeDigest(byte[] data){
         byte[] digest = {};
 
         try{
@@ -88,6 +76,11 @@ public class secureFile{
             md.update(data);
             digest = md.digest();
 
+            System.out.println(digest.length);
+
+            for(byte b: digest)
+                System.out.print(b);
+
         }catch(NoSuchAlgorithmException e){
             System.out.println("Error creating digest");
         }
@@ -95,15 +88,22 @@ public class secureFile{
         return digest;
     }
 
-    public static byte[] createKey(byte[] seed){
+    public static byte[] makeKey(byte[] seed){
         byte[] raw = {};
 
         try{
             //use user input as seed for generating random key
             SecureRandom random = new SecureRandom(seed);
             KeyGenerator keyGen = KeyGenerator.getInstance(ENCRYPTION_METHOD);
-            keyGen.init(random);
+            keyGen.init(128, random);
             raw = keyGen.generateKey().getEncoded();
+
+            System.out.println("");
+            System.out.println(raw.length);
+            for (byte b : raw)
+                System.out.print(b);
+            System.out.println("");
+            
 
         }catch(NoSuchAlgorithmException e){
             System.out.println("Error creating secret key");
@@ -114,25 +114,15 @@ public class secureFile{
 
     public static byte[] encrypt(byte[] data, byte[] md, SecretKey key){
         byte[] ciphertext = {};
-        byte[] byteMAPIdentifier = {};
-        
-        //convert MAP identifier from string to byte[]
-        try{
-            byteMAPIdentifier = MAP_IDENTIFIER.getBytes("UTF-8");
-        }catch(UnsupportedEncodingException e){
-            System.out.println("Error in encoding in encrypt function.");
-        }
-        
 
         //combine data with identifier and MAP
-        byte[] data_md = new byte[data.length + md.length + byteMAPIdentifier.length];
+        byte[] data_md = new byte[data.length + md.length];
         System.arraycopy(data, 0, data_md, 0, data.length);
-        System.arraycopy(byteMAPIdentifier,0,data_md,data.length,byteMAPIdentifier.length);
-        System.arraycopy(md, 0, data_md, data.length + byteMAPIdentifier.length, md.length);
+        System.arraycopy(md, 0, data_md, data.length, md.length);
         
         //encrypt data
         try{
-            Cipher genCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            Cipher genCipher = Cipher.getInstance("AES");
             genCipher.init(Cipher.ENCRYPT_MODE, key);
             ciphertext = genCipher.doFinal(data_md);
         }catch(GeneralSecurityException e){

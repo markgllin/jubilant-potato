@@ -11,12 +11,12 @@
         {
             "taskName": "build",
             "isBuildCommand": true,
-            "args": ["javac decryptFile.java"]
+            "args": ["javac *.java"]
         },
         {
             "taskName": "run",
             "isTestCommand": true,
-            "args":["java decryptFile encrypted 3"]
+            "args":["java secureFile potato.png 3"]
         }
     ]
 }

@@ -2,7 +2,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.io.*;
-import java.util.Arrays;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -15,11 +14,12 @@ public class decryptFile{
 
     private static final String MAP = "SHA1";
     private static final String ENCRYPTION_METHOD = "AES";
-    private static final String MAP_IDENTIFIER = "SSSHHHAAA111";
 
-    public static void main (String args[]){
-        String file = "";
-        String seed = "";
+    public static void main(String args[]){
+        String file = "", seed = "";
+        byte[] data = {}, digest = {}, rawKey = {}, pText = {}, decrypted = {};
+        byte[] file_Digest = new byte[20];
+        byte[] fData;
 
         if (args.length != 2){
             System.out.println("Run program by invoking the command \'java secureFile [plaintext-filename] [seed]\' ");
@@ -29,26 +29,51 @@ public class decryptFile{
             seed = args[1];
         }
 
+
         //read file into byte array
-        byte[] data = fileToBytes(file);
-
-        //create key using user input as seed
-        byte[] rawKey = createKey(seed.getBytes());
-        SecretKeySpec key = new SecretKeySpec(rawKey, ENCRYPTION_METHOD);
-
-        byte[] plaintext = checkIntegrity(decrypt(data, key););
+        data = readFile(file);
 
         try{
-            FileOutputStream decryptedFile = new FileOutputStream("decrypted-" + file);
-            decryptedFile.write(plaintext);
-            decryptedFile.close();
+            //create key using user input as seed
+            rawKey = makeKey(seed.getBytes("UTF-8"));
+            SecretKeySpec key = new SecretKeySpec(rawKey, ENCRYPTION_METHOD);
+
+            //encrypt data and write to file
+            decrypted = decrypt(data, digest, key);
+
+            System.out.println("");
+            for(byte b : decrypted)
+                System.out.print(b);
+            System.out.println("");
+
+
+            //get digest from data
+            fData = new byte[data.length-20];
+            System.arraycopy(data, 0, fData, 0, fData.length);
+            System.arraycopy(data, data.length - 20, file_Digest, 0, 20);
+
+            for(byte b : file_Digest)
+                System.out.print(b);
+
+            //create message digest
+            digest = makeDigest(fData);
+
+            if (digest.equals(file_Digest)){
+                System.out.println("EQUAL");
+            }
+
+            //write encrypted data to file
+            FileOutputStream pFile = new FileOutputStream("decrypted.png");
+            pFile.write(fData);
+            pFile.close();
+
         }catch(IOException e){
-            System.out.println("Invalid filepath or name entered.");
+            System.out.println("An error was encountered during encryption.");
         }
 
     }
 
-    public static byte[] fileToBytes(String file){
+    public static byte[] readFile(String file){
         byte[] data = {};
 
         try{
@@ -63,50 +88,7 @@ public class decryptFile{
         return data;
     }
 
-    public static byte[] createKey(byte[] seed){
-        byte[] raw = {};
-
-        try{
-            //use user input as seed for generating random key
-            SecureRandom random = new SecureRandom(seed);
-            KeyGenerator keyGen = KeyGenerator.getInstance(ENCRYPTION_METHOD);
-            keyGen.init(random);
-            raw = keyGen.generateKey().getEncoded();
-
-        }catch(NoSuchAlgorithmException e){
-            System.out.println("Error creating secret key");
-        }
-
-        return raw;
-    }
-
-    public static byte[] decrypt(byte[] data, SecretKey key){
-        byte[] plaintext = {};
-
-        //decrypt data
-        try{
-            Cipher genCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-
-            byte[] raw = key.getEncoded();
-
-            for (byte theByte : raw)
-                System.out.println(Integer.toHexString(theByte));
-    
-            genCipher.init(Cipher.DECRYPT_MODE, key);
-
-            plaintext = genCipher.doFinal(data);
-        }catch(GeneralSecurityException e){
-            System.out.println("Error encountered during decryption.");
-
-            for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
-                System.out.println(ste);
-            }
-        }
-
-        return plaintext;
-    }
-
-    public static byte[] createDigest(byte[] data){
+    public static byte[] makeDigest(byte[] data){
         byte[] digest = {};
 
         try{
@@ -122,43 +104,43 @@ public class decryptFile{
         return digest;
     }
 
-    public static byte[] checkIntegrity(byte[] file){
-        boolean identFound = false;
-        int index = -1;
+    public static byte[] makeKey(byte[] seed){
+        byte[] raw = {};
 
-        //convert MAP identifier from string to byte[]
-        byte[] byteMAPIdentifier = MAP_IDENTIFIER.getBytes();
+        try{
+            //use user input as seed for generating random key
+            SecureRandom random = new SecureRandom(seed);
+            KeyGenerator keyGen = KeyGenerator.getInstance(ENCRYPTION_METHOD);
+            keyGen.init(128, random);
+            raw = keyGen.generateKey().getEncoded();
 
-        for (int i=0; i < file.length; i++){
-            for (int j = i; j < i + byteMAPIdentifier.length && i+byteMAPIdentifier.length < file.length; j++){
-                if (file[j] != byteMAPIdentifier[j-i]){
-                    break;
-                } else if (j-i == byteMAPIdentifier.length){
-                    identFound = true;
-                    index = i;
-                }
+            System.out.println(raw.length);
+            for (byte b: raw){
+                System.out.print(b);
             }
+            System.out.println("");
 
-            if (identFound) break;
+        }catch(NoSuchAlgorithmException e){
+            System.out.println("Error creating secret key");
         }
 
-        if (!identFound) return new byte[0];
+        return raw;
+    }
 
-        //split file into data and md
-        byte[] data = new byte[index+1];
-        System.arraycopy(file, 0, data, 0, data.length);
+    public static byte[] decrypt(byte[] data, byte[] md, SecretKey key){
+        byte[] plaintext = {};
 
-        byte[] fileDigest = new byte[file.length-data.length-byteMAPIdentifier.length];
-        System.arraycopy(file,(index + byteMAPIdentifier.length), fileDigest, 0, fileDigest.length);
-
-        //create md from data and compare with md appended to file
-        byte[] genDigest = createDigest(data);
-
-        if(Arrays.equals(fileDigest, genDigest)){
-            return data;
+        //decrypt data
+        try{
+            Cipher genCipher = Cipher.getInstance("AES");
+            genCipher.init(Cipher.DECRYPT_MODE, key);
+            plaintext = genCipher.doFinal(data);
+            
+        }catch(GeneralSecurityException e){
+            System.out.println("Error encountered during decryption.");
+            e.printStackTrace();
         }
 
-        return new byte[0];
-
+        return plaintext;
     }
 }
