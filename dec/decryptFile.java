@@ -41,25 +41,16 @@ public class decryptFile{
             //encrypt data and write to file
             decrypted = decrypt(data, digest, key);
 
-            System.out.println("");
-            for(byte b : decrypted)
-                System.out.print(b);
-            System.out.println("");
-
-
             //get digest from data
-            fData = new byte[data.length-20];
-            System.arraycopy(data, 0, fData, 0, fData.length);
-            System.arraycopy(data, data.length - 20, file_Digest, 0, 20);
-
-            for(byte b : file_Digest)
-                System.out.print(b);
+            fData = new byte[decrypted.length-20];
+            System.arraycopy(decrypted, 0, fData, 0, fData.length);
+            System.arraycopy(decrypted, decrypted.length - 20, file_Digest, 0, 20);
 
             //create message digest
             digest = makeDigest(fData);
 
-            if (digest.equals(file_Digest)){
-                System.out.println("EQUAL");
+            if (!MessageDigest.isEqual(digest, file_Digest)){
+                System.out.println("File has been modified.")
             }
 
             //write encrypted data to file
@@ -69,8 +60,8 @@ public class decryptFile{
 
         }catch(IOException e){
             System.out.println("An error was encountered during encryption.");
+            e.printStackTrace();
         }
-
     }
 
     public static byte[] readFile(String file){
@@ -83,6 +74,7 @@ public class decryptFile{
 
         }catch (IOException e){
             System.out.println("Incorrect file path");
+            System.exit(0);
         }
 
         return data;
@@ -96,7 +88,6 @@ public class decryptFile{
             MessageDigest md = MessageDigest.getInstance(MAP);
             md.update(data);
             digest = md.digest();
-
         }catch(NoSuchAlgorithmException e){
             System.out.println("Error creating digest");
         }
@@ -113,12 +104,6 @@ public class decryptFile{
             KeyGenerator keyGen = KeyGenerator.getInstance(ENCRYPTION_METHOD);
             keyGen.init(128, random);
             raw = keyGen.generateKey().getEncoded();
-
-            System.out.println(raw.length);
-            for (byte b: raw){
-                System.out.print(b);
-            }
-            System.out.println("");
 
         }catch(NoSuchAlgorithmException e){
             System.out.println("Error creating secret key");

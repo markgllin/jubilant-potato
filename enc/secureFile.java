@@ -59,7 +59,6 @@ public class secureFile{
             //read file in as bytes
             Path path = Paths.get(file);
             data = Files.readAllBytes(path);
-
         }catch (IOException e){
             System.out.println("Incorrect file path");
         }
@@ -75,12 +74,6 @@ public class secureFile{
             MessageDigest md = MessageDigest.getInstance(MAP);
             md.update(data);
             digest = md.digest();
-
-            System.out.println(digest.length);
-
-            for(byte b: digest)
-                System.out.print(b);
-
         }catch(NoSuchAlgorithmException e){
             System.out.println("Error creating digest");
         }
@@ -97,13 +90,6 @@ public class secureFile{
             KeyGenerator keyGen = KeyGenerator.getInstance(ENCRYPTION_METHOD);
             keyGen.init(128, random);
             raw = keyGen.generateKey().getEncoded();
-
-            System.out.println("");
-            System.out.println(raw.length);
-            for (byte b : raw)
-                System.out.print(b);
-            System.out.println("");
-            
 
         }catch(NoSuchAlgorithmException e){
             System.out.println("Error creating secret key");
