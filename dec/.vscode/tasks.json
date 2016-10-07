@@ -16,7 +16,7 @@
         {
             "taskName": "run",
             "isTestCommand": true,
-            "args":["java decryptFile encrypted 3"]
+            "args":["java decryptFile encrypted asdfghjklsadasf"]
         }
     ]
 }

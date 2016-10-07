@@ -50,7 +50,7 @@ public class decryptFile{
             digest = makeDigest(fData);
 
             if (!MessageDigest.isEqual(digest, file_Digest)){
-                System.out.println("File has been modified.")
+                System.out.println("File has been modified.");
             }
 
             //write encrypted data to file
@@ -59,8 +59,7 @@ public class decryptFile{
             pFile.close();
 
         }catch(IOException e){
-            System.out.println("An error was encountered during encryption.");
-            e.printStackTrace();
+            System.out.println("An error was encountered during decryption.");
         }
     }
 
@@ -122,8 +121,8 @@ public class decryptFile{
             plaintext = genCipher.doFinal(data);
             
         }catch(GeneralSecurityException e){
-            System.out.println("Error encountered during decryption.");
-            e.printStackTrace();
+            System.out.println("Error encountered during decryption. Possibly incorrect seed passed in.");
+            System.exit(0);
         }
 
         return plaintext;
