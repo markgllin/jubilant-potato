@@ -86,7 +86,8 @@ public class secureFile{
 
         try{
             //use user input as seed for generating random key
-            SecureRandom random = new SecureRandom(seed);
+            SecureRandom random = new SecureRandom("SHA1PRNG");
+            random.setSeed(seed);
             KeyGenerator keyGen = KeyGenerator.getInstance(ENCRYPTION_METHOD);
             keyGen.init(128, random);
             raw = keyGen.generateKey().getEncoded();
